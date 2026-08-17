@@ -35,6 +35,28 @@ export async function listCandidates(companyId: string, filters: CandidateListFi
   });
 }
 
+export async function getCandidateStats(companyId: string) {
+  const [totalCandidates, manualReviewCertifications, manualReviewClearances, verifiedCertifications] =
+    await Promise.all([
+      prisma.candidate.count({ where: { companyId } }),
+      prisma.certification.count({
+        where: { candidate: { companyId }, verificationStatus: "MANUAL_REVIEW_REQUIRED" },
+      }),
+      prisma.securityClearance.count({
+        where: { candidate: { companyId }, verificationStatus: "MANUAL_REVIEW_REQUIRED" },
+      }),
+      prisma.certification.count({
+        where: { candidate: { companyId }, verificationStatus: "VERIFIED" },
+      }),
+    ]);
+
+  return {
+    totalCandidates,
+    needsManualReview: manualReviewCertifications + manualReviewClearances,
+    verifiedCertifications,
+  };
+}
+
 export async function getCandidate(companyId: string, candidateId: string) {
   return prisma.candidate.findFirst({
     where: { id: candidateId, companyId },

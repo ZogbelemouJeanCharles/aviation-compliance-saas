@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChevronLeft } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getCertificationForReview } from "@/lib/db/certifications";
 import { Button } from "@/components/ui/button";
@@ -24,10 +26,19 @@ export default async function ReviewCertificationPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">
-        Review certification — {certification.candidate.firstName}{" "}
-        {certification.candidate.lastName}
-      </h1>
+      <div className="flex flex-col gap-2">
+        <Link
+          href={`/candidates/${id}`}
+          className="flex w-fit items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="size-4" />
+          Back to candidate
+        </Link>
+        <h1 className="text-2xl font-bold tracking-tight">
+          Review certification — {certification.candidate.firstName}{" "}
+          {certification.candidate.lastName}
+        </h1>
+      </div>
 
       <Card className="max-w-2xl">
         <CardHeader>
