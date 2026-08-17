@@ -25,7 +25,7 @@ export function CertificationForm({ candidateId }: { candidateId: string }) {
   const [state, action, pending] = useActionState(addCertificationAction, undefined);
 
   return (
-    <form action={action} className="flex flex-col gap-4">
+    <form action={action} encType="multipart/form-data" className="flex flex-col gap-4">
       <input type="hidden" name="candidateId" value={candidateId} />
 
       <div className="flex flex-col gap-2">
@@ -83,6 +83,15 @@ export function CertificationForm({ candidateId }: { candidateId: string }) {
           <Label htmlFor="expirationDate">Expiration date</Label>
           <Input id="expirationDate" name="expirationDate" type="date" />
         </div>
+      </div>
+
+      <div className="flex flex-col gap-2">
+        <Label htmlFor="document">Certificate document</Label>
+        <Input id="document" name="document" type="file" accept=".pdf,image/*" />
+        <p className="text-xs text-muted-foreground">
+          Optional — a photo or PDF of the candidate&apos;s certificate. Recommended: this is what a
+          recruiter cross-checks against the FAA registry during review.
+        </p>
       </div>
 
       {state?.message && <p className="text-sm text-destructive">{state.message}</p>}

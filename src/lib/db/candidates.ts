@@ -3,6 +3,27 @@ import { prisma } from "./client";
 import type { Prisma, VerificationStatus, WorkAuthorizationStatus } from "@prisma/client";
 import { logAuditEntry } from "./audit";
 
+// Excludes `documentData` (the uploaded certificate file, stored as bytes in
+// the DB) — list/detail views only need to know a document exists
+// (`documentFileName`), not load its full contents into memory.
+const CERTIFICATION_LIST_SELECT = {
+  id: true,
+  type: true,
+  certificateNumber: true,
+  issuingAuthority: true,
+  ratingsOrTypes: true,
+  issueDate: true,
+  expirationDate: true,
+  verificationStatus: true,
+  verifiedAt: true,
+  verificationNotes: true,
+  documentFileName: true,
+  documentMimeType: true,
+  createdAt: true,
+  updatedAt: true,
+  candidateId: true,
+} satisfies Prisma.CertificationSelect;
+
 // Every function here takes `companyId` as its first argument and folds it
 // into the query — this is the application-level tenant boundary. There is
 // no "list all candidates" helper without a companyId on purpose: a recruiter
@@ -30,29 +51,34 @@ export async function listCandidates(companyId: string, filters: CandidateListFi
 
   return prisma.candidate.findMany({
     where,
-    include: { certifications: true, securityClearances: true },
+    include: {
+      certifications: { select: CERTIFICATION_LIST_SELECT },
+      securityClearances: true,
+    },
     orderBy: [{ lastName: "asc" }, { firstName: "asc" }],
   });
 }
 
+const TERMINAL_STATUSES: VerificationStatus[] = ["MANUALLY_VERIFIED", "MANUALLY_REJECTED"];
+
 export async function getCandidateStats(companyId: string) {
-  const [totalCandidates, manualReviewCertifications, manualReviewClearances, verifiedCertifications] =
+  const [totalCandidates, pendingCertifications, pendingClearances, verifiedCertifications] =
     await Promise.all([
       prisma.candidate.count({ where: { companyId } }),
       prisma.certification.count({
-        where: { candidate: { companyId }, verificationStatus: "MANUAL_REVIEW_REQUIRED" },
+        where: { candidate: { companyId }, verificationStatus: { notIn: TERMINAL_STATUSES } },
       }),
       prisma.securityClearance.count({
-        where: { candidate: { companyId }, verificationStatus: "MANUAL_REVIEW_REQUIRED" },
+        where: { candidate: { companyId }, verificationStatus: { notIn: TERMINAL_STATUSES } },
       }),
       prisma.certification.count({
-        where: { candidate: { companyId }, verificationStatus: "VERIFIED" },
+        where: { candidate: { companyId }, verificationStatus: "MANUALLY_VERIFIED" },
       }),
     ]);
 
   return {
     totalCandidates,
-    needsManualReview: manualReviewCertifications + manualReviewClearances,
+    needsManualReview: pendingCertifications + pendingClearances,
     verifiedCertifications,
   };
 }
@@ -61,7 +87,7 @@ export async function getCandidate(companyId: string, candidateId: string) {
   return prisma.candidate.findFirst({
     where: { id: candidateId, companyId },
     include: {
-      certifications: { orderBy: { createdAt: "desc" } },
+      certifications: { select: CERTIFICATION_LIST_SELECT, orderBy: { createdAt: "desc" } },
       securityClearances: { orderBy: { createdAt: "desc" } },
       flightHours: true,
     },

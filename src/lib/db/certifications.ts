@@ -1,6 +1,6 @@
 import "server-only";
 import { prisma } from "./client";
-import type { CertificationType, IssuingAuthority, VerificationStatus } from "@prisma/client";
+import type { CertificationType, IssuingAuthority, Prisma, VerificationStatus } from "@prisma/client";
 import { assertCandidateBelongsToCompany } from "./candidates";
 import { logAuditEntry } from "./audit";
 
@@ -11,6 +11,9 @@ export type CertificationInput = {
   ratingsOrTypes?: string | null;
   issueDate?: Date | null;
   expirationDate?: Date | null;
+  documentFileName?: string | null;
+  documentMimeType?: string | null;
+  documentData?: Prisma.Bytes | null;
 };
 
 export async function createCertification(
@@ -31,7 +34,11 @@ export async function createCertification(
     entityType: "CERTIFICATION",
     entityId: certification.id,
     action: "CERTIFICATION_CREATED",
-    details: { type: data.type, certificateNumber: data.certificateNumber },
+    details: {
+      type: data.type,
+      certificateNumber: data.certificateNumber,
+      documentAttached: !!data.documentData,
+    },
   });
 
   return certification;
@@ -40,7 +47,32 @@ export async function createCertification(
 export async function getCertificationForReview(companyId: string, certificationId: string) {
   return prisma.certification.findFirst({
     where: { id: certificationId, candidate: { companyId } },
-    include: { candidate: { select: { id: true, firstName: true, lastName: true } } },
+    select: {
+      id: true,
+      type: true,
+      certificateNumber: true,
+      issuingAuthority: true,
+      ratingsOrTypes: true,
+      issueDate: true,
+      expirationDate: true,
+      verificationStatus: true,
+      verifiedAt: true,
+      verificationNotes: true,
+      documentFileName: true,
+      documentMimeType: true,
+      candidateId: true,
+      candidate: { select: { id: true, firstName: true, lastName: true } },
+    },
+  });
+}
+
+// Only the download route needs the actual file bytes — kept separate from
+// getCertificationForReview so the review page never loads a multi-MB blob
+// just to render a status form.
+export async function getCertificationDocument(companyId: string, certificationId: string) {
+  return prisma.certification.findFirst({
+    where: { id: certificationId, candidate: { companyId } },
+    select: { documentFileName: true, documentMimeType: true, documentData: true },
   });
 }
 
@@ -54,10 +86,11 @@ async function assertCertificationBelongsToCompany(companyId: string, certificat
   }
 }
 
-// Records the outcome of a verification attempt — whether it came from the
-// automatic FAA matcher (src/lib/faa) or a recruiter's manual override.
-// Every call is written to the audit trail, since this is the compliance
-// record a customer would need to show in a regulatory review.
+// Records the outcome of a recruiter's manual review against the official
+// FAA lookup (or, for EASA/other authorities, their own judgment) — see
+// src/lib/faa for why this can't be fully automated. Every call is written
+// to the audit trail, since this is the compliance record a customer would
+// need to show in a regulatory review.
 export async function recordCertificationVerification(params: {
   companyId: string;
   actorUserId: string | null;

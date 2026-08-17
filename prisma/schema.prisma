@@ -122,8 +122,17 @@ model Certification {
   verificationStatus VerificationStatus  @default(PENDING)
   verifiedAt         DateTime?
   verificationNotes  String?
-  createdAt          DateTime            @default(now())
-  updatedAt          DateTime            @updatedAt
+
+  // The scanned/photographed certificate a candidate provides. Stored as a
+  // DB blob rather than object storage — keeps the prototype self-contained
+  // (no extra storage service/credentials), fine at this file count and
+  // size (a handful of PDFs/photos per candidate).
+  documentFileName String?
+  documentMimeType String?
+  documentData     Bytes?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   candidateId String
   candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)

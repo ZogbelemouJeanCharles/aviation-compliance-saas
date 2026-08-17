@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, PlusIcon } from "lucide-react";
+import { ChevronLeft, FileText, PlusIcon } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getCandidate } from "@/lib/db/candidates";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -22,7 +22,8 @@ import {
   ISSUING_AUTHORITY_LABELS,
   WORK_AUTHORIZATION_LABELS,
 } from "@/lib/labels";
-import { verifyCertificationAction } from "./actions";
+
+const NON_TERMINAL_STATUSES = new Set(["PENDING", "NOT_FOUND", "MANUAL_REVIEW_REQUIRED"]);
 
 function formatDate(date: Date | null) {
   if (!date) return "—";
@@ -113,25 +114,24 @@ export default async function CandidateDetailPage({
                 {candidate.certifications.map((cert) => (
                   <TableRow key={cert.id}>
                     <TableCell>{CERTIFICATION_TYPE_LABELS[cert.type]}</TableCell>
-                    <TableCell>{cert.certificateNumber}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5">
+                        {cert.certificateNumber}
+                        {cert.documentFileName && (
+                          <FileText
+                            className="size-3.5 text-muted-foreground"
+                            aria-label="Document attached"
+                          />
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell>{ISSUING_AUTHORITY_LABELS[cert.issuingAuthority]}</TableCell>
                     <TableCell>{formatDate(cert.expirationDate)}</TableCell>
                     <TableCell>
                       <VerificationStatusBadge status={cert.verificationStatus} />
                     </TableCell>
                     <TableCell className="text-right">
-                      {cert.issuingAuthority === "FAA" &&
-                        (cert.verificationStatus === "PENDING" ||
-                          cert.verificationStatus === "NOT_FOUND") && (
-                          <form
-                            action={verifyCertificationAction.bind(null, cert.id, candidate.id)}
-                          >
-                            <Button type="submit" size="sm" variant="outline">
-                              Verify against FAA
-                            </Button>
-                          </form>
-                        )}
-                      {cert.verificationStatus === "MANUAL_REVIEW_REQUIRED" && (
+                      {NON_TERMINAL_STATUSES.has(cert.verificationStatus) && (
                         <Button
                           size="sm"
                           variant="outline"
