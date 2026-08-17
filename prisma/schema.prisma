@@ -1,0 +1,222 @@
+// Prisma schema for the aviation compliance SaaS.
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  // Pooled connection (pgbouncer) — used by the app at runtime.
+  url       = env("DATABASE_URL")
+  // Direct connection — used by Prisma Migrate, which needs a non-pooled connection.
+  directUrl = env("DIRECT_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Tenancy & users
+// ---------------------------------------------------------------------------
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users          User[]
+  candidates     Candidate[]
+  auditLogEntries AuditLogEntry[]
+}
+
+enum UserRole {
+  ADMIN
+  RECRUITER
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         UserRole @default(RECRUITER)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  auditLogEntries AuditLogEntry[]
+
+  @@index([companyId])
+}
+
+// ---------------------------------------------------------------------------
+// Candidates
+// ---------------------------------------------------------------------------
+
+enum WorkAuthorizationStatus {
+  US_CITIZEN
+  PERMANENT_RESIDENT
+  VISA_HOLDER
+  SPONSORSHIP_REQUIRED
+  OTHER
+}
+
+model Candidate {
+  id                       String                   @id @default(cuid())
+  firstName                String
+  lastName                 String
+  email                    String?
+  phone                    String?
+  workAuthorizationStatus  WorkAuthorizationStatus  @default(OTHER)
+  workAuthorizationNotes   String?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  certifications     Certification[]
+  securityClearances SecurityClearance[]
+  flightHours        FlightHoursEntry[]
+
+  @@index([companyId])
+  @@index([companyId, lastName, firstName])
+}
+
+// ---------------------------------------------------------------------------
+// Certifications (pilot license, A&P mechanic, type ratings, medical class...)
+// ---------------------------------------------------------------------------
+
+enum CertificationType {
+  PILOT_LICENSE
+  AP_MECHANIC
+  TYPE_RATING
+  MEDICAL_CERTIFICATE
+  OTHER
+}
+
+enum IssuingAuthority {
+  FAA
+  EASA
+  OTHER
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  NOT_FOUND
+  MANUAL_REVIEW_REQUIRED
+  MANUALLY_VERIFIED
+  MANUALLY_REJECTED
+}
+
+model Certification {
+  id                 String              @id @default(cuid())
+  type               CertificationType
+  certificateNumber  String
+  issuingAuthority   IssuingAuthority
+  ratingsOrTypes     String?
+  issueDate          DateTime?
+  expirationDate     DateTime?
+  verificationStatus VerificationStatus  @default(PENDING)
+  verifiedAt         DateTime?
+  verificationNotes  String?
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+  @@index([certificateNumber])
+}
+
+// ---------------------------------------------------------------------------
+// Security clearances
+// ---------------------------------------------------------------------------
+
+enum ClearanceLevel {
+  CONFIDENTIAL
+  SECRET
+  TOP_SECRET
+  TOP_SECRET_SCI
+  OTHER
+}
+
+model SecurityClearance {
+  id                    String              @id @default(cuid())
+  level                 ClearanceLevel
+  grantedDate           DateTime?
+  expirationOrReinvestigationDate DateTime?
+  verificationStatus    VerificationStatus  @default(PENDING)
+  verifiedAt            DateTime?
+  verificationNotes     String?
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+// ---------------------------------------------------------------------------
+// Flight hours (optional, simple category/hours breakdown)
+// ---------------------------------------------------------------------------
+
+model FlightHoursEntry {
+  id       String @id @default(cuid())
+  category String
+  hours    Float
+
+  candidateId String
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+
+  @@index([candidateId])
+}
+
+// ---------------------------------------------------------------------------
+// FAA Airmen reference data (ingested from the public Releasable File)
+// Not tenant-scoped: this is shared reference data used for matching.
+// ---------------------------------------------------------------------------
+
+model FaaAirmenRecord {
+  id                String   @id @default(cuid())
+  certificateNumber String
+  firstName         String
+  lastName          String
+  certificationType String
+  ingestedAt        DateTime @default(now())
+
+  @@index([certificateNumber])
+  @@index([lastName, firstName])
+}
+
+// ---------------------------------------------------------------------------
+// Audit trail
+// ---------------------------------------------------------------------------
+
+enum AuditEntityType {
+  CANDIDATE
+  CERTIFICATION
+  SECURITY_CLEARANCE
+}
+
+model AuditLogEntry {
+  id         String          @id @default(cuid())
+  entityType AuditEntityType
+  entityId   String
+  action     String
+  details    Json?
+  createdAt  DateTime        @default(now())
+
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  actorUserId String?
+  actorUser   User?   @relation(fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([companyId, createdAt])
+  @@index([entityType, entityId])
+}
