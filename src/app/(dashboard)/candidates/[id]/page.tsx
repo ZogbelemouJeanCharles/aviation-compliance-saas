@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ChevronLeft, FileText, PlusIcon } from "lucide-react";
+import { ChevronLeft, FileText, PencilIcon, PlusIcon } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth/dal";
 import { getCandidate } from "@/lib/db/candidates";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -72,9 +72,20 @@ export default async function CandidateDetailPage({
             </p>
           </div>
         </div>
-        <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
-          {WORK_AUTHORIZATION_LABELS[candidate.workAuthorizationStatus]}
-        </Badge>
+        <div className="flex items-center gap-3">
+          <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
+            {WORK_AUTHORIZATION_LABELS[candidate.workAuthorizationStatus]}
+          </Badge>
+          <Button
+            variant="outline"
+            size="sm"
+            render={<Link href={`/candidates/${candidate.id}/edit`} />}
+            nativeButton={false}
+          >
+            <PencilIcon />
+            Edit
+          </Button>
+        </div>
       </div>
 
       <Card>

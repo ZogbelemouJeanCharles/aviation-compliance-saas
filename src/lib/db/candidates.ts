@@ -124,11 +124,23 @@ export async function createCandidate(
 
 export async function updateCandidate(
   companyId: string,
+  actorUserId: string,
   candidateId: string,
   data: Partial<CandidateInput>
 ) {
   await assertCandidateBelongsToCompany(companyId, candidateId);
-  return prisma.candidate.update({ where: { id: candidateId }, data });
+  const candidate = await prisma.candidate.update({ where: { id: candidateId }, data });
+
+  await logAuditEntry({
+    companyId,
+    actorUserId,
+    entityType: "CANDIDATE",
+    entityId: candidate.id,
+    action: "CANDIDATE_UPDATED",
+    details: { fields: Object.keys(data) },
+  });
+
+  return candidate;
 }
 
 // Shared by certifications.ts and clearances.ts before any nested mutation,

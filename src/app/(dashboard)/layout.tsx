@@ -1,4 +1,4 @@
-import { ClipboardList, LogOut, ShieldCheck, Users } from "lucide-react";
+import { ClipboardList, LogOut, ShieldCheck, UsersRound, Users } from "lucide-react";
 import { getCurrentUserProfile } from "@/lib/auth/dal";
 import { logout } from "@/lib/auth/actions";
 import { NavLink } from "@/components/nav-link";
@@ -62,6 +62,11 @@ export default async function DashboardLayout({
                 <SidebarMenuItem>
                   <NavLink href="/audit" icon={<ClipboardList />}>
                     Audit trail
+                  </NavLink>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <NavLink href="/team" icon={<UsersRound />}>
+                    Team
                   </NavLink>
                 </SidebarMenuItem>
               </SidebarMenu>

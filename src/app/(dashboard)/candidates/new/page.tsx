@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronLeft } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { createCandidateAction } from "../actions";
 import { CandidateForm } from "./candidate-form";
 
 export default function NewCandidatePage() {
@@ -21,7 +22,11 @@ export default function NewCandidatePage() {
           <CardTitle>Candidate details</CardTitle>
         </CardHeader>
         <CardContent>
-          <CandidateForm />
+          <CandidateForm
+            action={createCandidateAction}
+            submitLabel="Create candidate"
+            pendingLabel="Creating…"
+          />
         </CardContent>
       </Card>
     </div>

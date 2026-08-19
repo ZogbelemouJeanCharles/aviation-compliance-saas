@@ -4,7 +4,7 @@ import * as z from "zod";
 import { redirect } from "next/navigation";
 import { WorkAuthorizationStatus } from "@prisma/client";
 import { getCurrentUser } from "@/lib/auth/dal";
-import { createCandidate } from "@/lib/db/candidates";
+import { createCandidate, updateCandidate } from "@/lib/db/candidates";
 
 const CandidateSchema = z.object({
   firstName: z.string().min(1, { error: "First name is required." }),
@@ -45,4 +45,35 @@ export async function createCandidateAction(
   }
 
   redirect(`/candidates/${candidate.id}`);
+}
+
+const EditCandidateSchema = CandidateSchema.extend({
+  candidateId: z.string().min(1),
+});
+
+export async function updateCandidateAction(
+  _state: CandidateFormState,
+  formData: FormData
+): Promise<CandidateFormState> {
+  const user = await getCurrentUser();
+
+  const validated = EditCandidateSchema.safeParse(Object.fromEntries(formData));
+  if (!validated.success) {
+    return { errors: z.flattenError(validated.error).fieldErrors };
+  }
+
+  const { candidateId, email, phone, workAuthorizationNotes, ...rest } = validated.data;
+
+  try {
+    await updateCandidate(user.companyId, user.id, candidateId, {
+      ...rest,
+      email: email || null,
+      phone: phone || null,
+      workAuthorizationNotes: workAuthorizationNotes || null,
+    });
+  } catch {
+    return { message: "Could not update the candidate. Please try again." };
+  }
+
+  redirect(`/candidates/${candidateId}`);
 }
