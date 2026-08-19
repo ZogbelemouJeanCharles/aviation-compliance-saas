@@ -50,14 +50,14 @@ export default async function DashboardLayout({
         `fixed` too, and the Sidebar's own top offset overridden below to
         start beneath it, or the two would render on top of each other.
       */}
-      <div className="fixed inset-x-0 top-0 z-30 h-96 overflow-hidden border-b">
+      <div className="fixed inset-x-0 top-0 z-30 h-44 overflow-hidden border-b">
         <Image
           src="/cesna-plane.jpg"
           alt=""
           fill
           priority
           className="object-cover grayscale-[55%] contrast-125 brightness-75"
-          style={{ objectPosition: "center 35%" }}
+          style={{ objectPosition: "center 38%" }}
         />
         <div
           aria-hidden
@@ -66,10 +66,10 @@ export default async function DashboardLayout({
         />
       </div>
       {/* Spacer: pushes the (normal-flow) sidebar-wrapper row below the fixed banner. */}
-      <div className="h-96 shrink-0" aria-hidden />
+      <div className="h-44 shrink-0" aria-hidden />
 
       <SidebarProvider className="min-h-0 flex-1">
-        <Sidebar collapsible="icon" className="top-96 h-[calc(100svh-24rem)]">
+        <Sidebar collapsible="icon" className="top-44 h-[calc(100svh-11rem)]">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
