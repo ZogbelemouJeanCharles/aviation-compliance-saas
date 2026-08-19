@@ -4,7 +4,6 @@ import { getCurrentUserProfile } from "@/lib/auth/dal";
 import { logout } from "@/lib/auth/actions";
 import { NavLink } from "@/components/nav-link";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -18,7 +17,6 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarProvider,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 
 const BRAND_NAVY = "#13265C";
@@ -42,15 +40,10 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex flex-1 flex-col">
-      {/*
-        The shadcn Sidebar renders its desktop container as `fixed inset-y-0`
-        (pinned to the viewport, out of normal document flow) so it can stay
-        put while content scrolls. That means a banner placed *above* it in
-        the JSX tree doesn't actually push it down — the banner has to be
-        `fixed` too, and the Sidebar's own top offset overridden below to
-        start beneath it, or the two would render on top of each other.
-      */}
-      <div className="fixed inset-x-0 top-0 z-30 h-44 overflow-hidden border-b">
+      {/* Full width of the boxed app shell (see root layout's max-w-6xl
+          wrapper) — the narrower box means less of the (portrait) photo
+          gets cropped away than a full-viewport-wide banner would. */}
+      <div className="relative h-44 w-full shrink-0 overflow-hidden border-b">
         <Image
           src="/cesna-plane.jpg"
           alt=""
@@ -65,19 +58,22 @@ export default async function DashboardLayout({
           style={{ backgroundColor: BRAND_NAVY, mixBlendMode: "multiply", opacity: 0.65 }}
         />
       </div>
-      {/* Spacer: pushes the (normal-flow) sidebar-wrapper row below the fixed banner. */}
-      <div className="h-44 shrink-0" aria-hidden />
 
+      {/*
+        `collapsible="none"` renders the sidebar as a plain flow element
+        instead of shadcn's default `fixed inset-y-0` desktop container —
+        fixed positioning is relative to the viewport, which would break out
+        of the centered box above and misalign with it. Trades away the
+        collapse-to-icons affordance, which this app doesn't otherwise use.
+      */}
       <SidebarProvider className="min-h-0 flex-1">
-        <Sidebar collapsible="icon" className="top-44 h-[calc(100svh-11rem)]">
+        <Sidebar collapsible="none">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <ShieldCheck className="size-4" />
               </div>
-              <span className="truncate font-semibold tracking-tight group-data-[collapsible=icon]:hidden">
-                AeroVet Compliance
-              </span>
+              <span className="truncate font-semibold tracking-tight">AeroVet Compliance</span>
             </div>
           </SidebarHeader>
 
@@ -114,13 +110,13 @@ export default async function DashboardLayout({
           </SidebarContent>
 
           <SidebarFooter>
-            <div className="flex items-center gap-2 rounded-full px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+            <div className="flex items-center gap-2 rounded-full px-2 py-1.5">
               <Avatar className="size-8 shrink-0">
                 <AvatarFallback className="text-xs font-medium">
                   {initialsFor(user.name)}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex min-w-0 flex-col group-data-[collapsible=icon]:hidden">
+              <div className="flex min-w-0 flex-col">
                 <span className="truncate text-sm font-medium">{user.name}</span>
                 <span className="truncate text-xs text-muted-foreground">{user.company.name}</span>
               </div>
@@ -135,9 +131,7 @@ export default async function DashboardLayout({
         </Sidebar>
 
         <SidebarInset>
-          <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-            <SidebarTrigger />
-            <Separator orientation="vertical" className="h-4" />
+          <header className="flex h-14 shrink-0 items-center border-b px-4">
             <span className="text-sm font-medium text-muted-foreground">{user.company.name}</span>
           </header>
           <main className="flex flex-1 flex-col gap-6 p-6 md:p-8">{children}</main>

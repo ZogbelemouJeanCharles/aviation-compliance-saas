@@ -38,7 +38,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col">
         <TooltipProvider delay={200}>
-          {children}
+          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col bg-background shadow-2xl">
+            {children}
+          </div>
           <Toaster />
         </TooltipProvider>
       </body>
