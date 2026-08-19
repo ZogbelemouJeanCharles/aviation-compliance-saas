@@ -43,6 +43,7 @@ export async function runExpirationAlerts() {
   ]);
 
   let companiesAlerted = 0;
+  let companiesFailedToAlert = 0;
 
   for (const companyId of companyIds) {
     const companyCertifications = certifications.filter((c) => c.candidate.companyId === companyId);
@@ -70,21 +71,55 @@ export async function runExpirationAlerts() {
     ]);
     if (!company || recipients.length === 0) continue;
 
-    await sendExpirationAlertEmail({
-      to: recipients.map((r) => r.email),
-      companyName: company.name,
-      certifications: freshCertifications.map((c) => ({
-        candidateName: `${c.candidate.firstName} ${c.candidate.lastName}`,
-        type: c.type,
-        certificateNumber: c.certificateNumber,
-        expirationDate: c.expirationDate as Date,
-      })),
-      clearances: freshClearances.map((c) => ({
-        candidateName: `${c.candidate.firstName} ${c.candidate.lastName}`,
-        level: c.level,
-        expirationDate: c.expirationOrReinvestigationDate as Date,
-      })),
-    });
+    try {
+      await sendExpirationAlertEmail({
+        to: recipients.map((r) => r.email),
+        companyName: company.name,
+        certifications: freshCertifications.map((c) => ({
+          candidateName: `${c.candidate.firstName} ${c.candidate.lastName}`,
+          type: c.type,
+          certificateNumber: c.certificateNumber,
+          expirationDate: c.expirationDate as Date,
+        })),
+        clearances: freshClearances.map((c) => ({
+          candidateName: `${c.candidate.firstName} ${c.candidate.lastName}`,
+          level: c.level,
+          expirationDate: c.expirationOrReinvestigationDate as Date,
+        })),
+      });
+    } catch (error) {
+      // Don't let one company's send failure (bad recipient, provider
+      // outage, sandbox restrictions...) abort the whole run, and — since
+      // nothing was actually delivered — don't log EXPIRATION_ALERT_SENT.
+      // Log the failure itself, per item, so it's visible in the audit
+      // trail rather than silently missing.
+      companiesFailedToAlert++;
+      const message = error instanceof Error ? error.message : String(error);
+      await Promise.all([
+        ...freshCertifications.map((c) =>
+          logAuditEntry({
+            companyId,
+            actorUserId: null,
+            entityType: "CERTIFICATION",
+            entityId: c.id,
+            action: "EXPIRATION_ALERT_FAILED",
+            details: { error: message },
+          })
+        ),
+        ...freshClearances.map((c) =>
+          logAuditEntry({
+            companyId,
+            actorUserId: null,
+            entityType: "SECURITY_CLEARANCE",
+            entityId: c.id,
+            action: "EXPIRATION_ALERT_FAILED",
+            details: { error: message },
+          })
+        ),
+      ]);
+      continue;
+    }
+
     companiesAlerted++;
 
     await Promise.all([
@@ -114,6 +149,7 @@ export async function runExpirationAlerts() {
   return {
     companiesConsidered: companyIds.size,
     companiesAlerted,
+    companiesFailedToAlert,
     certificationsFound: certifications.length,
     clearancesFound: clearances.length,
   };

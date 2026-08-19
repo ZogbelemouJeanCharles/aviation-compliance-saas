@@ -72,10 +72,19 @@ export async function sendExpirationAlertEmail(params: {
   `;
 
   const resend = new Resend(apiKey);
-  await resend.emails.send({
+  const result = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? "alerts@aerovet-compliance.dev",
     to: params.to,
     subject: `[AeroVet Compliance] Upcoming expirations for ${params.companyName}`,
     html,
   });
+
+  // The Resend SDK doesn't throw on API-level failures (bad recipient,
+  // sandbox restrictions, etc.) — it returns `{ data: null, error: {...} }`
+  // instead. Silently treating that as success is exactly the kind of gap
+  // that shouldn't exist in a compliance audit trail, so surface it as a
+  // real failure the caller has to handle.
+  if (result.error) {
+    throw new Error(`Resend rejected the expiration alert email: ${result.error.message}`);
+  }
 }
