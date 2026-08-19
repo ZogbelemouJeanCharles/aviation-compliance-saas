@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ClipboardList, Home, LogOut, ShieldCheck, UsersRound, Users } from "lucide-react";
 import { getCurrentUserProfile } from "@/lib/auth/dal";
 import { logout } from "@/lib/auth/actions";
@@ -19,6 +20,8 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
+
+const BRAND_NAVY = "#13265C";
 
 function initialsFor(name: string) {
   return name
@@ -84,7 +87,7 @@ export default async function DashboardLayout({
         </SidebarContent>
 
         <SidebarFooter>
-          <div className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <div className="flex items-center gap-2 rounded-full px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <Avatar className="size-8 shrink-0">
               <AvatarFallback className="text-xs font-medium">
                 {initialsFor(user.name)}
@@ -105,10 +108,24 @@ export default async function DashboardLayout({
       </Sidebar>
 
       <SidebarInset>
-        <header className="flex h-14 shrink-0 items-center gap-3 border-b px-4">
-          <SidebarTrigger />
-          <Separator orientation="vertical" className="h-4" />
-          <span className="text-sm font-medium text-muted-foreground">{user.company.name}</span>
+        <header className="relative flex h-28 shrink-0 items-end overflow-hidden border-b">
+          <Image
+            src="/cesna-plane.jpg"
+            alt=""
+            fill
+            priority
+            className="object-cover object-center grayscale-[55%] contrast-125 brightness-75"
+          />
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{ backgroundColor: BRAND_NAVY, mixBlendMode: "multiply", opacity: 0.65 }}
+          />
+          <div className="relative flex w-full items-center gap-3 px-4 pb-3">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="h-4" />
+            <span className="text-sm font-medium text-foreground">{user.company.name}</span>
+          </div>
         </header>
         <main className="flex flex-1 flex-col gap-6 p-6 md:p-8">{children}</main>
       </SidebarInset>

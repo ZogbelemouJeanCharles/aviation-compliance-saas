@@ -105,11 +105,13 @@ export default async function ReviewCertificationPage({
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Name-only snapshot check:</span>
                 {nameCheck?.found ? (
-                  <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
+                  <Badge className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-400">
                     Name found in registry snapshot
                   </Badge>
                 ) : (
-                  <Badge variant="outline">No name match in snapshot</Badge>
+                  <Badge variant="outline" className="rounded-full">
+                    No name match in snapshot
+                  </Badge>
                 )}
               </div>
               <p className="text-xs text-muted-foreground">

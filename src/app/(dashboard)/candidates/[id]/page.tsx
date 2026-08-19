@@ -73,7 +73,7 @@ export default async function CandidateDetailPage({
           </div>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="px-3 py-1 text-xs font-medium">
+          <Badge variant="secondary" className="rounded-full px-3 py-1 text-xs font-medium">
             {WORK_AUTHORIZATION_LABELS[candidate.workAuthorizationStatus]}
           </Badge>
           <Button
