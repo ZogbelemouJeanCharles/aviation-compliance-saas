@@ -10,6 +10,7 @@ import {
   SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarGroupLabel,
   SidebarHeader,
   SidebarInset,
   SidebarMenu,
@@ -52,6 +53,9 @@ export default async function DashboardLayout({
 
         <SidebarContent>
           <SidebarGroup>
+            <SidebarGroupLabel className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase">
+              Workspace
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
