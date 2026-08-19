@@ -67,7 +67,7 @@ export default async function DashboardLayout({
         collapse-to-icons affordance, which this app doesn't otherwise use.
       */}
       <SidebarProvider className="min-h-0 flex-1">
-        <Sidebar collapsible="none">
+        <Sidebar collapsible="none" className="h-auto shrink-0 self-stretch">
           <SidebarHeader>
             <div className="flex items-center gap-2 px-2 py-1.5">
               <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">

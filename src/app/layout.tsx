@@ -34,9 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} dark h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${fraunces.variable} dark antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="flex min-h-dvh flex-col">
         <TooltipProvider delay={200}>
           <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col bg-background shadow-2xl">
             {children}
