@@ -191,14 +191,17 @@ model FlightHoursEntry {
 // ---------------------------------------------------------------------------
 
 model FaaAirmenRecord {
-  id                String   @id @default(cuid())
-  certificateNumber String
+  id String @id @default(cuid())
+
+  // The FAA's public bulk file has no certificate number field (confirmed
+  // against faa.gov — see src/lib/faa/check-name-in-registry.ts), so this is
+  // only ever a name-level record: which name is in the FAA registry, and
+  // whether it came from the pilot or non-pilot (e.g. A&P mechanic) file.
   firstName         String
   lastName          String
   certificationType String
   ingestedAt        DateTime @default(now())
 
-  @@index([certificateNumber])
   @@index([lastName, firstName])
 }
 

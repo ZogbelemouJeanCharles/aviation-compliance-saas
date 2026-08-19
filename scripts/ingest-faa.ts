@@ -1,33 +1,51 @@
-// Manual ingestion trigger for the FAA Airmen Certification Releasable File.
+// Ingests the FAA Airmen Certification Releasable File into FaaAirmenRecord.
 //
 // Usage:
-//   npx tsx scripts/ingest-faa.ts path/to/file.csv CERT_NUMBER_COLUMN FIRST_NAME_COLUMN LAST_NAME_COLUMN CERT_TYPE_COLUMN
+//   npx tsx scripts/ingest-faa.ts <path-to-unzipped-faa-folder>
 //
-// The column names are whatever headers the downloaded FAA CSV actually
-// uses — inspect the file first. See src/lib/faa/ingest.ts for why the
-// mapping isn't hard-coded.
-import { readFileSync } from "node:fs";
-import { ingestFaaAirmenCsv } from "@/lib/faa/ingest";
+// Download the CSV database from:
+//   https://www.faa.gov/licenses_certificates/airmen_certification/releasable_airmen_download
+// ("Database in Comma Separated Format (csv)"), unzip it, and pass the folder
+// containing PILOT_BASIC.csv / NONPILOT_BASIC.csv.
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { clearFaaAirmenRecords, ingestFaaBasicFile } from "@/lib/faa/ingest";
 
 async function main() {
-  const [filePath, certificateNumber, firstName, lastName, certificationType] = process.argv.slice(2);
-
-  if (!filePath || !certificateNumber || !firstName || !lastName || !certificationType) {
-    console.error(
-      "Usage: npx tsx scripts/ingest-faa.ts <file.csv> <certNumberColumn> <firstNameColumn> <lastNameColumn> <certTypeColumn>"
-    );
+  const folder = process.argv[2];
+  if (!folder) {
+    console.error("Usage: npx tsx scripts/ingest-faa.ts <path-to-unzipped-faa-folder>");
     process.exit(1);
   }
 
-  const csvContent = readFileSync(filePath, "utf-8");
-  const result = await ingestFaaAirmenCsv(csvContent, {
-    certificateNumber,
-    firstName,
-    lastName,
-    certificationType,
-  });
+  const pilotPath = join(folder, "PILOT_BASIC.csv");
+  const nonPilotPath = join(folder, "NONPILOT_BASIC.csv");
 
-  console.log(`Parsed ${result.rowsParsed} rows, ingested ${result.recordsIngested} FAA airmen records.`);
+  if (!existsSync(pilotPath) && !existsSync(nonPilotPath)) {
+    console.error(`Neither PILOT_BASIC.csv nor NONPILOT_BASIC.csv found in ${folder}`);
+    process.exit(1);
+  }
+
+  console.log("Clearing existing FAA snapshot...");
+  await clearFaaAirmenRecords();
+
+  let totalIngested = 0;
+
+  if (existsSync(pilotPath)) {
+    console.log("Ingesting PILOT_BASIC.csv...");
+    const result = await ingestFaaBasicFile(readFileSync(pilotPath, "utf-8"), "PILOT");
+    console.log(`  ${result.recordsIngested} / ${result.rowsParsed} rows ingested`);
+    totalIngested += result.recordsIngested;
+  }
+
+  if (existsSync(nonPilotPath)) {
+    console.log("Ingesting NONPILOT_BASIC.csv...");
+    const result = await ingestFaaBasicFile(readFileSync(nonPilotPath, "utf-8"), "NON_PILOT");
+    console.log(`  ${result.recordsIngested} / ${result.rowsParsed} rows ingested`);
+    totalIngested += result.recordsIngested;
+  }
+
+  console.log(`Done — ${totalIngested} FAA airmen name records ingested.`);
 }
 
 main().catch((error) => {

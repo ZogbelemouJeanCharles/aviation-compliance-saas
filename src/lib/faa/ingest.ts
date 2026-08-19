@@ -2,53 +2,54 @@
 // "@/lib/db/client" (which is marked `import "server-only"`). It's invoked
 // by the standalone CLI script (scripts/ingest-faa.ts), which runs under
 // plain Node/tsx rather than inside the Next.js server bundle — the
-// "server-only" guard throws unconditionally outside that bundle. Creating
-// its own short-lived PrismaClient keeps this module usable from both the
-// CLI script and, later, an in-app admin route if we add one.
+// "server-only" guard throws unconditionally outside that bundle.
 import { PrismaClient } from "@prisma/client";
 import { parseCsv } from "./csv";
 
 const prisma = new PrismaClient();
 
-export type FaaCsvColumnMapping = {
-  certificateNumber: string;
-  firstName: string;
-  lastName: string;
-  certificationType: string;
-};
+const CHUNK_SIZE = 5000;
+
+export type FaaBasicFileSource = "PILOT" | "NON_PILOT";
 
 /**
- * The FAA "Airmen Certification Releasable File" download has its own set of
- * column headers that we haven't hard-coded here — inspect the CSV you
- * download from https://www.faa.gov/licenses_certificates/airmen_certification/releasable_airmen_download
- * and pass the matching header names in `mapping`. This keeps the ingestion
- * logic decoupled from a specific header layout that may vary between the
- * FAA's file variants (pilot, mechanic, etc.) or change over time.
+ * Parses one of the FAA's "*_BASIC.csv" files (PILOT_BASIC.csv or
+ * NONPILOT_BASIC.csv from the Airmen Certification Releasable File download)
+ * and inserts name records in chunks.
+ *
+ * These files use "UNIQUE ID, FIRST NAME, LAST NAME, ..." headers — confirmed
+ * against a real download on 2026-08-19, see faa.gov's HelpComm.pdf. There is
+ * no certificate number column: the FAA's own download page states plainly
+ * that "this information does not include airmen certificate number data."
+ * That's why FaaAirmenRecord only stores names — see
+ * src/lib/faa/check-name-in-registry.ts for how this is used (a plausibility
+ * hint, never a verification).
  */
-export async function ingestFaaAirmenCsv(csvContent: string, mapping: FaaCsvColumnMapping) {
+export async function ingestFaaBasicFile(csvContent: string, source: FaaBasicFileSource) {
   const rows = parseCsv(csvContent);
 
   const records = rows
     .map((row) => ({
-      certificateNumber: row[mapping.certificateNumber]?.trim(),
-      firstName: row[mapping.firstName]?.trim(),
-      lastName: row[mapping.lastName]?.trim(),
-      certificationType: row[mapping.certificationType]?.trim() ?? "",
+      firstName: row["FIRST NAME"]?.trim(),
+      lastName: row["LAST NAME"]?.trim(),
+      certificationType: source,
     }))
-    .filter((record) => record.certificateNumber && record.firstName && record.lastName) as {
-    certificateNumber: string;
+    .filter((record) => record.firstName && record.lastName) as {
     firstName: string;
     lastName: string;
     certificationType: string;
   }[];
 
-  // Full-refresh strategy: the FAA publishes a new snapshot periodically
-  // rather than incremental updates, so each ingestion run replaces the
-  // local reference table wholesale instead of trying to diff it.
-  await prisma.$transaction([
-    prisma.faaAirmenRecord.deleteMany({}),
-    prisma.faaAirmenRecord.createMany({ data: records }),
-  ]);
+  for (let i = 0; i < records.length; i += CHUNK_SIZE) {
+    await prisma.faaAirmenRecord.createMany({ data: records.slice(i, i + CHUNK_SIZE) });
+  }
 
   return { rowsParsed: rows.length, recordsIngested: records.length };
+}
+
+// Full-refresh strategy: the FAA publishes a new snapshot monthly rather than
+// incremental updates, so each ingestion run replaces the local reference
+// table wholesale instead of trying to diff it.
+export async function clearFaaAirmenRecords() {
+  await prisma.faaAirmenRecord.deleteMany({});
 }
