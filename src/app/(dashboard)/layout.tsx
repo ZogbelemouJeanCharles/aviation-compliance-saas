@@ -1,4 +1,4 @@
-import { ClipboardList, LogOut, ShieldCheck, UsersRound, Users } from "lucide-react";
+import { ClipboardList, Home, LogOut, ShieldCheck, UsersRound, Users } from "lucide-react";
 import { getCurrentUserProfile } from "@/lib/auth/dal";
 import { logout } from "@/lib/auth/actions";
 import { NavLink } from "@/components/nav-link";
@@ -59,6 +59,11 @@ export default async function DashboardLayout({
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
+                  <NavLink href="/home" icon={<Home />}>
+                    Home
+                  </NavLink>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                   <NavLink href="/candidates" icon={<Users />}>
                     Candidates
                   </NavLink>
@@ -79,7 +84,7 @@ export default async function DashboardLayout({
         </SidebarContent>
 
         <SidebarFooter>
-          <div className="flex items-center gap-2 rounded-full px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
+          <div className="flex items-center gap-2 px-2 py-1.5 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:px-0">
             <Avatar className="size-8 shrink-0">
               <AvatarFallback className="text-xs font-medium">
                 {initialsFor(user.name)}

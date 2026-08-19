@@ -53,9 +53,7 @@ export default async function TeamPage() {
                 <TableCell className="font-medium">{teammate.name}</TableCell>
                 <TableCell>{teammate.email}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="rounded-full">
-                    {teammate.role}
-                  </Badge>
+                  <Badge variant="outline">{teammate.role}</Badge>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {dateFormatter.format(teammate.createdAt)}

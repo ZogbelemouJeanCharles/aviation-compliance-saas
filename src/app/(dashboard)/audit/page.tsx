@@ -61,7 +61,7 @@ export default async function AuditPage() {
                   {dateFormatter.format(entry.createdAt)}
                 </TableCell>
                 <TableCell>
-                  <Badge variant="secondary" className="rounded-full font-normal">
+                  <Badge variant="secondary" className="font-normal">
                     {entry.entityType} · {entry.entityId.slice(0, 8)}
                   </Badge>
                 </TableCell>

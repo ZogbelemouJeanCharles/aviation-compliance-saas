@@ -39,7 +39,7 @@ export async function login(_state: LoginState, formData: FormData): Promise<Log
   if (!passwordMatches) return invalidCredentials;
 
   await createSession({ id: user.id, companyId: user.companyId, role: user.role });
-  redirect("/candidates");
+  redirect("/home");
 }
 
 export async function logout() {

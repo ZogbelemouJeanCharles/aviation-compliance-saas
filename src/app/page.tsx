@@ -51,7 +51,7 @@ export default function Home() {
           render={<Link href="/login" />}
           nativeButton={false}
           size="lg"
-          className="mt-2 rounded-full px-6"
+          className="mt-2 px-6"
         >
           Sign in
         </Button>

@@ -6,7 +6,7 @@ import { decryptSessionCookie } from "@/lib/auth/session";
 // *optimistic* check: it only reads the session cookie to redirect quickly.
 // The real authorization gate is the Data Access Layer (src/lib/auth/dal.ts),
 // which every Server Component/Action actually calls.
-const PROTECTED_PREFIXES = ["/candidates"];
+const PROTECTED_PREFIXES = ["/home", "/candidates", "/audit", "/team"];
 const PUBLIC_ROUTES = ["/login", "/"];
 
 export default async function proxy(req: NextRequest) {
@@ -24,7 +24,7 @@ export default async function proxy(req: NextRequest) {
   }
 
   if (isPublic && pathname === "/login" && hasValidSession) {
-    return NextResponse.redirect(new URL("/candidates", req.nextUrl));
+    return NextResponse.redirect(new URL("/home", req.nextUrl));
   }
 
   return NextResponse.next();
