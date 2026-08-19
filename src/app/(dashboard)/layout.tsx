@@ -108,13 +108,14 @@ export default async function DashboardLayout({
       </Sidebar>
 
       <SidebarInset>
-        <header className="relative flex h-28 shrink-0 items-end overflow-hidden border-b">
+        <header className="relative flex h-44 shrink-0 items-end overflow-hidden border-b">
           <Image
             src="/cesna-plane.jpg"
             alt=""
             fill
             priority
-            className="object-cover object-center grayscale-[55%] contrast-125 brightness-75"
+            className="object-cover grayscale-[55%] contrast-125 brightness-75"
+            style={{ objectPosition: "center 38%" }}
           />
           <div
             aria-hidden
