@@ -1,21 +1,34 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+const BRAND_NAVY = "#13265C";
+
 export default function Home() {
   return (
-    <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-6 text-center">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(ellipse 900px 550px at 50% -5%, oklch(0.32 0 0 / 0.6), transparent 70%)",
-        }}
-      />
+    <div className="flex flex-1 flex-col">
+      <div className="relative h-[42vh] min-h-[280px] w-full overflow-hidden">
+        <Image
+          src="/cesna-plane.jpg"
+          alt="Cessna aircraft on the tarmac"
+          fill
+          priority
+          className="object-cover object-center grayscale-[55%] contrast-125 brightness-75"
+        />
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{ backgroundColor: BRAND_NAVY, mixBlendMode: "multiply", opacity: 0.6 }}
+        />
+        <div
+          aria-hidden
+          className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-background to-transparent"
+        />
+      </div>
 
-      <div className="relative flex flex-col items-center gap-6">
-        <div className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground">
+      <div className="relative -mt-10 flex flex-1 flex-col items-center justify-center gap-6 px-6 pb-16 text-center">
+        <div className="flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
           <ShieldCheck className="size-7" />
         </div>
 
